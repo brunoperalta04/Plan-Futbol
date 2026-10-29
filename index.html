@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plan Fútbol</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plan Fútbol">
+<meta name="theme-color" content="#f3f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101512" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+/* Layout: app de una columna para el celu — cabecera con la sesión de hoy, selector de semana/día, bloques de ejercicios tildables */
+:root{
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#18201b; --muted:#5d6a62; --line:#dbe1dc;
+  --accent:#1f6b45; --accent-soft:#e1efe6;
+  --hi:#c2412d; --hi-soft:#f8e4e0; --lo:#2f7a52; --lo-soft:#e2f1e8; --off:#7a857e; --off-soft:#eceeec;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --surface:#18201b; --ink:#e8eee9; --muted:#9aa89f; --line:#2a352e;
+  --accent:#5cc28a; --accent-soft:#1d3327;
+  --hi:#f07a63; --hi-soft:#3a201b; --lo:#62c48e; --lo-soft:#1b3326; --off:#9aa59e; --off-soft:#232a25;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --surface:#18201b; --ink:#e8eee9; --muted:#9aa89f; --line:#2a352e;
+  --accent:#5cc28a; --accent-soft:#1d3327;
+  --hi:#f07a63; --hi-soft:#3a201b; --lo:#62c48e; --lo-soft:#1b3326; --off:#9aa59e; --off-soft:#232a25;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(12px + env(safe-area-inset-top,0px)) calc(40px + env(safe-area-inset-bottom,0px));margin:0;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:6px}
+h1{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1;margin:0;text-wrap:balance;letter-spacing:.01em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px}
+.chip{font-family:var(--f-mono);font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip.alto{background:var(--hi-soft);color:var(--hi);border-color:transparent}
+.chip.bajo{background:var(--lo-soft);color:var(--lo);border-color:transparent}
+.chip.off{background:var(--off-soft);color:var(--off);border-color:transparent}
+.focus{color:var(--muted);margin:2px 0 0}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:14px}
+.nav{display:flex;flex-direction:column;gap:10px}
+.weeks{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.weeks button{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.02em;border:0;border-radius:9px;padding:8px;background:transparent;color:var(--muted);cursor:pointer}
+.weeks button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.weeks small{display:block;font-family:var(--f-body);font-weight:400;font-size:11px;letter-spacing:0}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.days button{position:relative;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:7px 0 9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.days button .dot{width:7px;height:7px;border-radius:50%}
+.dot.alto{background:var(--hi)}.dot.bajo{background:var(--lo)}.dot.off{background:var(--off);opacity:.5}
+.days button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.days button.today::after{content:"HOY";position:absolute;top:-8px;font-family:var(--f-mono);font-size:9px;font-weight:500;background:var(--accent);color:var(--bg);padding:1px 5px;border-radius:4px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.block{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.bhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+.bhead h2{font-family:var(--f-display);font-weight:700;font-size:21px;margin:0;letter-spacing:.02em;text-transform:uppercase}
+.bhead span{font-family:var(--f-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.bnote{padding:8px 14px 0;font-size:13px;color:var(--muted);margin:0}
+ul{list-style:none;margin:0;padding:4px 0}
+li label{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:10px 14px;cursor:pointer;align-items:start}
+li+li label{border-top:1px dashed var(--line)}
+li input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent)}
+.ex{display:flex;flex-direction:column;gap:2px;min-width:0}
+.exrow{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.exname{font-weight:600}
+.sx{font-family:var(--f-mono);font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.exnote{font-size:13px;color:var(--muted)}
+.new{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:2px}
+li input:checked + .ex .exname{text-decoration:line-through;color:var(--muted)}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.foot{display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted)}
+.foot button{align-self:flex-start;font:inherit;font-size:13px;background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+.tabs button{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:6px 0 8px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.kg{font-family:var(--f-mono);font-size:12px;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.prow{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:11px 14px;align-items:center}
+.prow+.prow{border-top:1px dashed var(--line)}
+.pname{font-weight:600;min-width:0}
+.pmeta{grid-column:1/-1;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pin{display:flex;align-items:center;gap:6px}
+.pin input{width:84px;font:600 17px var(--f-mono);text-align:right;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.pin span{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.pin input.saved{border-color:var(--accent)}
+.status{font-size:13px;color:var(--muted)}
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mhead h2{font-family:var(--f-display);font-weight:800;font-size:26px;margin:0;text-transform:capitalize}
+.mhead button,.mark button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dh{font-family:var(--f-mono);font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
+.cal button{aspect-ratio:1;max-width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 15px var(--f-body);font-variant-numeric:tabular-nums;cursor:pointer;padding:0}
+.cal button.ok{background:var(--lo);border-color:var(--lo);color:var(--bg)}
+.cal button.no{background:var(--hi);border-color:var(--hi);color:var(--bg)}
+.cal button.ok .dot,.cal button.no .dot{background:var(--bg);opacity:.8}
+.cal button.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.cal button.future{opacity:.55;cursor:default}
+.cal .empty{visibility:hidden}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-family:var(--f-display);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.mark{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mark button[aria-pressed="true"].bok{background:var(--lo);color:var(--bg);border-color:var(--lo)}
+.mark button[aria-pressed="true"].bno{background:var(--hi);color:var(--bg);border-color:var(--hi)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.tabs{grid-template-columns:repeat(4,1fr)!important}
+.tabs button{font-size:16px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;font-weight:600}
+.field input{font:500 14px var(--f-mono);padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);width:100%}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
+.btns button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.steps{margin:0;padding-left:20px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabHoy" aria-selected="true">Entreno</button>
+    <button type="button" role="tab" id="tabPesos" aria-selected="false">Pesos</button>
+    <button type="button" role="tab" id="tabCal" aria-selected="false">Calendario</button>
+    <button type="button" role="tab" id="tabSync" aria-selected="false">Sync</button>
+  </div>
+  <div id="viewPesos" hidden style="display:flex;flex-direction:column;gap:14px">
+    <header>
+      <div class="eyebrow">Cargas de trabajo</div>
+      <h1>Pesos</h1>
+      <p class="focus">Anotá el peso que usás en cada ejercicio. Se guarda solo al salir del campo y queda el historial de los últimos cambios.</p>
+    </header>
+    <div class="status" id="pStatus"></div>
+    <div id="pList" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+  <div id="viewSync" hidden style="display:flex;flex-direction:column;gap:14px">
+    <header>
+      <div class="eyebrow">Respaldo en GitHub Gist</div>
+      <h1>Sincronización</h1>
+      <p class="focus">Pesos, calendario, tildes y semana del ciclo se guardan en un Gist privado de tu cuenta, así ves lo mismo en el celu y en la compu.</p>
+    </header>
+    <div class="card">
+      <div class="field"><label for="ghToken">Token de GitHub (permiso "gist")</label><input id="ghToken" type="password" autocomplete="off" placeholder="ghp_…"></div>
+      <div class="field"><label for="gistId">ID del Gist (vacío la primera vez: se crea solo)</label><input id="gistId" type="text" autocomplete="off" placeholder="se completa automáticamente"></div>
+      <div class="btns"><button type="button" class="primary" id="syncSave">Guardar y sincronizar</button><button type="button" id="syncNowBtn">Sincronizar ahora</button><button type="button" id="syncOff">Desconectar</button></div>
+      <div class="status" id="syncStatus">Sin configurar: todo se guarda solo en este dispositivo.</div>
+    </div>
+    <div class="card">
+      <ol class="steps">
+        <li>En github.com → Settings → Developer settings → Personal access tokens → Tokens (classic), generá uno con solo el permiso <b>gist</b> y sin vencimiento.</li>
+        <li>Pegalo acá y tocá "Guardar y sincronizar". Se crea el Gist y aparece su ID.</li>
+        <li>En el otro dispositivo pegá el mismo token y el mismo ID.</li>
+      </ol>
+    </div>
+  </div>
+  <div id="viewCal" hidden style="display:flex;flex-direction:column;gap:14px">
+    <header>
+      <div class="eyebrow">Seguimiento</div>
+      <h1>Calendario</h1>
+      <p class="focus">Tocá un día para marcarlo: verde si cumpliste, rojo si no, y otro toque lo limpia. Si tildás todos los ejercicios del día se marca verde solo, y si después destildás alguno, ese verde automático se quita.</p>
+    </header>
+    <div class="stats" id="stats"></div>
+    <div class="mhead"><button type="button" id="mPrev" aria-label="Mes anterior">‹</button><h2 id="mTitle"></h2><button type="button" id="mNext" aria-label="Mes siguiente">›</button></div>
+    <div class="cal" id="cal"></div>
+    <div class="legend"><span><i style="background:var(--lo)"></i>Cumplido</span><span><i style="background:var(--hi)"></i>No cumplido</span><span><i class="dot alto" style="border-radius:50%"></i>Día alto</span><span><i class="dot bajo" style="border-radius:50%"></i>Día bajo</span></div>
+  </div>
+  <div id="viewHoy" style="display:flex;flex-direction:column;gap:18px">
+  <header>
+    <div class="eyebrow" id="dateLine"></div>
+    <h1 id="title"></h1>
+    <div class="meta" id="meta"></div>
+    <p class="focus" id="focus"></p>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+  <div class="mark" id="mark" hidden><button type="button" class="bok" data-v="ok">✓ Cumplí</button><button type="button" class="bno" data-v="no">✗ No lo hice</button></div>
+  <nav class="nav" aria-label="Elegir semana y día">
+    <div class="weeks" id="weeks"></div>
+    <div class="days" id="days"></div>
+  </nav>
+  <main id="session" style="display:flex;flex-direction:column;gap:14px"></main>
+  <div class="foot">
+    <span id="cycleInfo"></span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" id="setS1">Esta semana es S1</button>
+      <button type="button" id="setS2">Esta semana es S2</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+const N = true; // marca ejercicio nuevo/ajustado
+const SUP_A = {
+  title:"Superior A", tag:"bajo", dur:"≈45'", focus:"Empuje y tracción horizontal + core anti-rotación.",
+  blocks:[
+    {name:"Calentamiento", time:"5'", items:[
+      {n:"Movilidad de hombros y escápulas", sx:"5'", d:"Rotaciones, aperturas con banda, un par de flexiones suaves."},
+      {n:"Face pull", sx:"2×15", k:"face_pull", d:"Liviano, para activar deltoides posterior.", nw:N}]},
+    {name:"Biserie A", time:"≈13'", note:"A1 → A2 sin pausa, después 90\". Series 1–3 dejando 1–2 reps en reserva; la última al límite.", items:[
+      {n:"A1. Press plano con mancuernas", sx:"4×8–10", k:"press_plano"},
+      {n:"A2. Remo con pecho apoyado (banco inclinado)", sx:"4×8–10", k:"remo_pecho", d:"Si no hay banco libre: remo a una mano apoyado en banco plano."}]},
+    {name:"Biserie B", time:"≈10'", note:"Rango completo. 90\" al terminar la biserie.", items:[
+      {n:"B1. Press militar sentado con mancuernas", sx:"3×10–12", k:"militar_a"},
+      {n:"B2. Dominadas (o jalón al pecho si no llegás a 6)", sx:"3×8–12", k:"dominadas_a", nw:N}]},
+    {name:"Core", time:"≈4'", items:[
+      {n:"Press Pallof en polea", sx:"3×8 por lado", k:"pallof", d:"2–3 s de pausa con brazos extendidos. Control, no fatiga.", nw:N}]},
+    {name:"Biserie C · Brazos", time:"≈9'", note:"Seguidos, 60\" de pausa.", items:[
+      {n:"C1. Curl de bíceps con mancuernas", sx:"3×12–15", k:"curl_manc"},
+      {n:"C2. Extensión de tríceps en polea alta", sx:"3×12–15", k:"triceps_polea"}]}
+  ]};
+
+const PLAN = {
+1:{
+ 1:{title:"Campo → Inferior pesado", tag:"alto", dur:"1h30–1h45", focus:"Velocidad con piernas frescas, después fuerza bruta.",
+   blocks:[
+    {name:"Campo", time:"≈35'", note:"Primero, con las piernas frescas.", items:[
+      {n:"Entrada en calor", sx:"10'", d:"Trote libre, movilidad, desplazamientos laterales + 3 progresivos de 60 m."},
+      {n:"Sprints", sx:"4×30 m", d:"Al 85–90%. Recuperación caminando completa (1,5–2').", nw:N},
+      {n:"Piques con freno total", sx:"5×15 m", d:"Máxima velocidad y frenar a cero en el menor espacio posible."},
+      {n:"Zig-zag con conos", sx:"4 pasadas", d:"5–6 conos, bajando el centro de gravedad en cada giro."}]},
+    {name:"Gym", time:"≈50'", items:[
+      {n:"Movilidad de cadera y tobillos", sx:"5'"},
+      {n:"Sentadilla búlgara", sx:"4×6–8 por pierna", k:"bulgara", d:"Pesada. Bajada en 3 s, subida explosiva."},
+      {n:"Peso muerto rumano", sx:"4×8", k:"rdl", d:"Foco en estirar bien los isquios."},
+      {n:"Nordic curls", sx:"3×4–6", d:"Bajá lo más lento que puedas. Reemplaza a las extensiones.", nw:N},
+      {n:"Copenhagen plank", sx:"3×20–30 s por lado", d:"Aductores.", nw:N},
+      {n:"Gemelos de pie", sx:"4×15", k:"gemelos", d:"Pausa de 2 s abajo."},
+      {n:"Sóleo sentado", sx:"3×15", k:"soleo", d:"Rodilla flexionada. Clave para el Aquiles.", nw:N}]}
+ ]},
+ 2:SUP_A,
+ 3:{title:"Descanso", tag:"off", dur:"0–40'", focus:"Recuperar. Opcional: rodaje Z2 muy suave.",
+   blocks:[{name:"Opcional", items:[
+      {n:"Z2 muy suave", sx:"30–40'", d:"Guiate por la banda de FC, no por el ritmo."},
+      {n:"Movilidad general", sx:"10–15'"}]}]},
+ 4:{title:"Plio → Pista", tag:"alto", dur:"1h20–1h30", focus:"Pliometría primero (necesita frescura), después series de 1000.",
+   blocks:[
+    {name:"Pliometría", time:"≈25'", items:[
+      {n:"Snap downs / aterrizajes clavados", sx:"3×5", d:"Aprender a frenar antes de saltar fuerte.", nw:N},
+      {n:"Box jumps", sx:"4×5", d:"Buscá altura. Bajá caminando, no saltando."},
+      {n:"Skater jumps", sx:"3×8 por lado", d:"Clavá y estabilizá 1 s en cada aterrizaje."},
+      {n:"Kettlebell swings", sx:"4×12", k:"kb_swing", d:"Explosión de cadera."},
+      {n:"Cossack squat", sx:"3×6 por lado", k:"cossack", d:"Fuerza lateral.", nw:N}]},
+    {name:"Pista", time:"≈50'", items:[
+      {n:"Entrada en calor", sx:"1,5–2 km", d:"Trote suave + técnica (skipping, talones a la cola)."},
+      {n:"Series de 1000 m", sx:"5×1000", d:"A 4:20–4:30/km. Pausa de 90\" caminando o trote muy lento."},
+      {n:"Vuelta a la calma", sx:"1,5 km", d:"Trote suave."}]},
+    {name:"Core", time:"≈5'", items:[
+      {n:"Rueda abdominal", sx:"3×10–12"}]}
+ ]},
+ 5:{title:"Superior B + tobillos", tag:"bajo", dur:"50–55'", focus:"Inclinada a lo vertical para no repetir la Superior A.",
+   blocks:[
+    {name:"Fuerza", items:[
+      {n:"Dominadas con lastre", sx:"4×6–8", k:"dominadas_lastre"},
+      {n:"Press militar con mancuernas", sx:"4×6–8", k:"militar_b", d:"Más pesado que en la Superior A."},
+      {n:"Remo en polea baja", sx:"3×8–10", k:"remo_polea"}]},
+    {name:"Hombro", items:[
+      {n:"Vuelos laterales", sx:"3×12–15", k:"vuelos"},
+      {n:"Face pull", sx:"3×15", k:"face_pull", nw:N}]},
+    {name:"Tobillos", items:[
+      {n:"Propiocepción a una pierna", sx:"3×1' por pierna", d:"Sobre bosu o disco, tirando una pelota contra la pared."}]}
+ ]},
+ 6:{title:"Campo con pelota", tag:"alto", dur:"1h–1h15", focus:"Coordinar la fuerza nueva con la pelota.",
+   blocks:[
+    {name:"Velocidad", items:[
+      {n:"Entrada en calor", sx:"10'"},
+      {n:"Sprints", sx:"4×20–40 m", d:"Al 85–90%, recuperación completa.", nw:N}]},
+    {name:"Con pelota", items:[
+      {n:"Conducción + freno + arranque", sx:"6–8 rep", d:"Conducir 20 m rápido, pisarla, 2 s congelado y arranque explosivo de 10 m."},
+      {n:"Slalom con pelota", sx:"4–6 pasadas", d:"Máxima velocidad sin perder el control."},
+      {n:"Remates con fatiga", sx:"10 por pierna", d:"Pique de 10 m, recibir (o autopase) y definir fuerte y cruzado."}]},
+    {name:"Cierre", items:[
+      {n:"Suicidios", sx:"2–3 series", d:"Fondo → área chica → vuelta → medialuna → vuelta."}]}
+ ]},
+ 7:{title:"Fondo largo Z2", tag:"bajo", dur:"1h15–1h30", focus:"Mantener el motor del maratón.",
+   blocks:[{name:"Running", items:[
+      {n:"Fondo aeróbico", sx:"12–15 km", d:"Referencia 5:45–6:00/km, pero mandá la FC: tiene que ser Z2 y tenés que poder hablar. Si llegás cargado, 10 km."}]}]}
+},
+2:{
+ 1:{title:"Campo → Inferior moderado", tag:"alto", dur:"≈1h15", focus:"Sprint al 95% y cambios de dirección reactivos.",
+   blocks:[
+    {name:"Campo", time:"≈30'", items:[
+      {n:"Entrada en calor", sx:"10'", d:"Incluí 3 progresivos de 60 m."},
+      {n:"Sprints", sx:"4×30–40 m", d:"Al 95%. Recuperación completa.", nw:N},
+      {n:"COD reactivo", sx:"6–8 rep", d:"Que alguien marque el lado o reaccioná a una pelota tirada.", nw:N}]},
+    {name:"Gym", time:"≈45'", items:[
+      {n:"Sentadilla búlgara moderada", sx:"3×10–12 por pierna", k:"bulgara_mod", d:"Menos peso, movimiento constante sin pausa arriba."},
+      {n:"Curl de isquios en camilla", sx:"3×12–15", k:"curl_isquios"},
+      {n:"Nordic curls", sx:"2×4–6", nw:N},
+      {n:"Plancha lateral con elevación de pierna", sx:"3×30–40 s por lado"}]}
+ ]},
+ 2:SUP_A,
+ 3:{title:"Descanso total", tag:"off", dur:"—", focus:"Semana de transferencia: hoy no se hace nada.",
+   blocks:[{name:"Opcional", items:[{n:"Caminata o movilidad suave", sx:"libre"}]}]},
+ 4:{title:"Plio reactiva → Intermitentes", tag:"alto", dur:"≈1h", focus:"El esfuerzo intermitente que pide un partido.",
+   blocks:[
+    {name:"Plio reactiva", time:"≈15'", note:"Volumen bajo, calidad alta.", items:[
+      {n:"Saltos laterales continuos sobre una línea", sx:"3×10–15 s"},
+      {n:"Bounds laterales con clavada", sx:"3×5 por lado"},
+      {n:"Drop jumps bajos (30 cm)", sx:"2–3×3"}]},
+    {name:"Intermitentes", time:"≈40'", items:[
+      {n:"Entrada en calor", sx:"2 km", d:"Trote suave + técnica."},
+      {n:"15\"/15\"", sx:"2 bloques × 10–12", d:"15\" rápido (ritmo de 1000 o un poco más) + 15\" trote. 3' trotando entre bloques.", nw:N},
+      {n:"Vuelta a la calma", sx:"1,5 km"}]},
+    {name:"Alternativa", note:"Si querés sostener el running, alterná quincenas.", items:[
+      {n:"Tempo en lugar de intermitentes", sx:"2 + 6 + 2 km", d:"Bloque de 6 km a 4:50–5:00/km."}]}
+ ]},
+ 5:{title:"Accesorios + tobillos", tag:"bajo", dur:"45–55'", focus:"Descarga: detalles, articulaciones y movilidad.",
+   blocks:[
+    {name:"Gym", items:[
+      {n:"Vuelos laterales", sx:"4×12–15", k:"vuelos"},
+      {n:"Superserie: curl de bíceps con barra + extensión de tríceps en polea", sx:"3×12", k:"curl_barra"}]},
+    {name:"Tobillos y cadera", items:[
+      {n:"Propiocepción a una pierna", sx:"3×1' por pierna", d:"Sobre bosu o disco, tirando una pelota contra la pared."},
+      {n:"Pogos (saltitos de tobillo)", sx:"3×20", nw:N},
+      {n:"Movilidad de cadera", sx:"10'", nw:N}]}
+ ]},
+ 6:{title:"Pelota + simulación de partido", tag:"alto", dur:"1h–1h15", focus:"Transición al partido real.",
+   blocks:[
+    {name:"Velocidad", items:[
+      {n:"Entrada en calor", sx:"10'"},
+      {n:"Sprints", sx:"4×20–40 m", d:"Al 95%.", nw:N}]},
+    {name:"Con pelota", items:[
+      {n:"Conducción + freno + arranque", sx:"6–8 rep"},
+      {n:"Slalom con pelota", sx:"4–6 pasadas"},
+      {n:"Remates con fatiga", sx:"10 por pierna"}]},
+    {name:"Cierre", items:[
+      {n:"Reducido 3v3 o 4v4", sx:"4×4', pausa 2'", d:"Si conseguís amigos. Si no, 2–3 series de suicidios.", nw:N}]}
+ ]},
+ 7:{title:"Regenerativo", tag:"bajo", dur:"35–40' o descanso", focus:"Volumen fácil para arrancar el ciclo el lunes más suelto.",
+   blocks:[{name:"Running", items:[
+      {n:"Trote regenerativo", sx:"35–40'", d:"Muy lento, arriba de 6:15/km. O descanso total."}]}]}
+}};
+
+const TAGS={alto:"Alto",bajo:"Bajo",off:"Off"};
+const DN=["","L","M","X","J","V","S","D"];
+const DFULL=["","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const DEFAULT_ANCHOR="2026-11-02"; // lunes de la primera S1
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function parseYmd(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function mondayOf(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);return x}
+function dow(d){return ((d.getDay()+6)%7)+1}
+function weekFor(d,anchor){const diff=Math.round((mondayOf(d)-mondayOf(anchor))/(7*864e5));return ((diff%2)+2)%2+1}
+
+const today=new Date();
+let anchor=parseYmd(store.get("anchor")||DEFAULT_ANCHOR);
+function cycleWeek(){return today<mondayOf(anchor)?1:weekFor(today,anchor)} // antes del arranque, previsualiza S1
+let todayWeek=cycleWeek(), curWeek=todayWeek, curDay=dow(today);
+
+function render(){
+  const s=PLAN[curWeek][curDay];
+  const isToday=curWeek===todayWeek&&curDay===dow(today);
+  const fmt=new Intl.DateTimeFormat("es-AR",{weekday:"long",day:"numeric",month:"short"});
+  document.getElementById("dateLine").textContent=(isToday?"Hoy · "+fmt.format(today):DFULL[curDay])+" · Semana "+curWeek+(curWeek===1?" · carga":" · transferencia");
+  document.getElementById("title").textContent=s.title;
+  document.getElementById("meta").innerHTML=`<span class="chip ${s.tag}">Intensidad ${TAGS[s.tag]}</span><span class="chip">${s.dur}</span>`;
+  document.getElementById("focus").textContent=s.focus;
+
+  const b=document.getElementById("banner");
+  if(today<mondayOf(anchor)){b.hidden=false;b.textContent="El ciclo arranca el lunes "+new Intl.DateTimeFormat("es-AR",{day:"numeric",month:"long"}).format(anchor)+" con la Semana 1. Mientras tanto, podés ver cualquier día.";}
+  else b.hidden=true;
+
+  document.getElementById("weeks").innerHTML=[1,2].map(w=>`<button type="button" data-w="${w}" aria-pressed="${w===curWeek}">Semana ${w}<small>${w===1?"Carga mecánica":"Transferencia"}${w===todayWeek?" · actual":""}</small></button>`).join("");
+  document.getElementById("days").innerHTML=[1,2,3,4,5,6,7].map(d=>{const t=PLAN[curWeek][d].tag;const tdy=curWeek===todayWeek&&d===dow(today);return `<button type="button" data-d="${d}" aria-pressed="${d===curDay}" aria-label="${DFULL[d]}" class="${tdy?"today":""}">${DN[d]}<span class="dot ${t}"></span></button>`}).join("");
+
+  // checks guardados por fecha concreta (si es hoy) o por semana/día
+  const key="chk:"+(isToday?ymd(today):"w"+curWeek+"d"+curDay);
+  let saved={};try{saved=JSON.parse(store.get(key)||"{}")}catch(e){}
+  let idx=0;
+  document.getElementById("session").innerHTML=s.blocks.map(bl=>`
+    <section class="block">
+      <div class="bhead"><h2>${bl.name}</h2>${bl.time?`<span>${bl.time}</span>`:""}</div>
+      ${bl.note?`<p class="bnote">${bl.note}</p>`:""}
+      <ul>${bl.items.map(it=>{const id="ex"+(idx++);return `<li><label for="${id}"><input type="checkbox" id="${id}" ${saved[id]?"checked":""}><span class="ex"><span class="exrow"><span class="exname">${it.n}${it.nw?'<span class="new">nuevo</span>':""}</span><span style="display:flex;gap:6px;align-items:baseline"><span class="sx">${it.sx}</span>${kgPill(it.k)}</span></span>${it.d?`<span class="exnote">${it.d}</span>`:""}</span></label></li>`}).join("")}</ul>
+    </section>`).join("");
+  const boxes=[...document.querySelectorAll("#session input")];
+  const upd=()=>{const done=boxes.filter(x=>x.checked).length;document.getElementById("bar").style.width=(boxes.length?done/boxes.length*100:0)+"%"};
+  boxes.forEach(x=>x.addEventListener("change",()=>{const o={};boxes.forEach(y=>{if(y.checked)o[y.id]=1});store.set(key,JSON.stringify(o));touchChk(key);upd();
+    if(!isToday||!boxes.length)return; const id=ymd(today), all=boxes.every(y=>y.checked);
+    if(all&&R[id]!=="ok")setDayState(id,"ok",true);           // todo tildado → verde automático
+    else if(!all&&R[id]==="ok"&&A[id])setDayState(id,null);   // destildaste algo → se quita el verde automático
+  }));
+  upd();
+  const mk=document.getElementById("mark"); mk.hidden=!isToday;
+  mk.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(R[ymd(today)]===b.dataset.v)));
+
+  document.getElementById("cycleInfo").textContent="Ciclo de 2 semanas que se repite. Esta semana corresponde a la Semana "+todayWeek+". Si te desfasás, corregilo:";
+}
+
+document.getElementById("weeks").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;curWeek=+b.dataset.w;render()});
+document.getElementById("days").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;curDay=+b.dataset.d;render()});
+function setThisWeekAs(w){const m=mondayOf(today);if(w===2)m.setDate(m.getDate()-7);anchor=m;store.set("anchor",ymd(m));store.set("anchorT",String(Date.now()));scheduleSync();todayWeek=cycleWeek();curWeek=todayWeek;curDay=dow(today);render()}
+document.getElementById("setS1").addEventListener("click",()=>setThisWeekAs(1));
+document.getElementById("setS2").addEventListener("click",()=>setThisWeekAs(2));
+/* ---------- Pesos ---------- */
+let W={}; let pesosDirty=false;
+const fmtKg=v=>String(v).replace(".",",");
+function kgPill(k){return k&&W[k]&&W[k].kg!=null?`<span class="kg">${fmtKg(W[k].kg)} kg</span>`:""}
+function loadLocal(){try{W=JSON.parse(store.get("pesos")||"{}")}catch(e){W={}}}
+function saveLocal(){store.set("pesos",JSON.stringify(W))}
+
+function catalog(){ // ejercicios con carga, agrupados por la sesión donde aparecen primero
+  const seen=new Set(), groups=[];
+  for(const w of [1,2]) for(let d=1;d<=7;d++){
+    const s=PLAN[w][d]; let g=null;
+    s.blocks.forEach(bl=>bl.items.forEach(it=>{
+      if(!it.k||seen.has(it.k))return; seen.add(it.k);
+      if(!g){g={title:s.title,where:"S"+w+" · "+DFULL[d],items:[]};groups.push(g)}
+      const name=it.k==="curl_barra"?"Curl de bíceps con barra":it.n.replace(/^[A-C]\d\.\s*/,"");
+      g.items.push({k:it.k,name,sx:it.sx});
+    }));
+  }
+  return groups;
+}
+function pmeta(k,sx){
+  const r=W[k]; if(!r||r.kg==null) return sx+" · sin cargar";
+  const h=(r.hist||[]).map(x=>fmtKg(x.kg)); const prev=h.slice(-4,-1);
+  const last=r.hist&&r.hist.length?r.hist[r.hist.length-1].d.split("-").reverse().slice(0,2).join("/"):"";
+  return sx+(last?" · act. "+last:"")+(prev.length?" · antes: "+prev.join(" → "):"");
+}
+function renderPesos(){
+  const list=document.getElementById("pList");
+  if(list.contains(document.activeElement)){pesosDirty=true;return}
+  pesosDirty=false;
+  list.innerHTML=catalog().map(g=>`
+    <section class="block">
+      <div class="bhead"><h2>${g.title}</h2><span>${g.where}</span></div>
+      ${g.items.map(it=>`<div class="prow">
+        <label class="pname" for="kg_${it.k}">${it.name}</label>
+        <span class="pin"><input id="kg_${it.k}" data-k="${it.k}" type="text" inputmode="decimal" placeholder="—" value="${W[it.k]&&W[it.k].kg!=null?fmtKg(W[it.k].kg):""}"><span>kg</span></span>
+        <span class="pmeta" id="m_${it.k}">${pmeta(it.k,it.sx)}</span>
+      </div>`).join("")}
+    </section>`).join("");
+}
+async function saveKg(k,raw){
+  const t=raw.trim().replace(",","."); const cur=W[k]||{};
+  if(t===""){ if(cur.kg==null)return; }
+  const kg=t===""?null:Number(t);
+  if(t!==""&&(!isFinite(kg)||kg<0)){setStatus("Escribí un número, por ejemplo 22,5.");return}
+  if(kg===cur.kg)return;
+  const hist=(cur.hist||[]).slice(); if(kg!=null) hist.push({d:ymd(new Date()),kg});
+  const body={kg,hist:hist.slice(-12),t:Date.now()};
+  W[k]=body;
+  saveLocal(); setStatus("Guardado."); scheduleSync();
+  const m=document.getElementById("m_"+k); if(m) m.textContent=pmeta(k,catalogSx(k));
+  render();
+}
+function catalogSx(k){for(const g of catalog())for(const it of g.items)if(it.k===k)return it.sx;return ""}
+let stT; function setStatus(t){const el=document.getElementById("pStatus");el.textContent=t;clearTimeout(stT);stT=setTimeout(()=>{el.textContent=cfg().token?"Se sincroniza con tu Gist.":"Guardado en este dispositivo."},2500)}
+document.getElementById("pList").addEventListener("change",e=>{const i=e.target.closest("input[data-k]");if(i)saveKg(i.dataset.k,i.value)});
+document.getElementById("pList").addEventListener("focusout",()=>setTimeout(()=>{if(pesosDirty)renderPesos()},0));
+
+function showTab(t){
+  ["Hoy","Pesos","Cal","Sync"].forEach(n=>{document.getElementById("tab"+n).setAttribute("aria-selected",String(n===t));document.getElementById("view"+n).hidden=n!==t});
+  if(t==="Pesos")renderPesos(); if(t==="Cal")renderCal();
+}
+["Hoy","Pesos","Cal","Sync"].forEach(n=>document.getElementById("tab"+n).addEventListener("click",()=>showTab(n)));
+
+/* ---------- Calendario ---------- */
+let R={}, A={}, RT={}; let calM=new Date(today.getFullYear(),today.getMonth(),1);
+function loadR(){try{R=JSON.parse(store.get("registro")||"{}")}catch(e){R={}} try{A=JSON.parse(store.get("registroAuto")||"{}")}catch(e){A={}} try{RT=JSON.parse(store.get("registroT")||"{}")}catch(e){RT={}}}
+function saveR(){store.set("registro",JSON.stringify(R));store.set("registroAuto",JSON.stringify(A));store.set("registroT",JSON.stringify(RT))}
+function planFor(d){return d<mondayOf(anchor)?null:PLAN[weekFor(d,anchor)][dow(d)]}
+async function setDayState(id,v,auto=false){
+  if(v)R[id]=v; else delete R[id];
+  if(v&&auto)A[id]=1; else delete A[id];
+  RT[id]=Date.now();
+  saveR(); render(); renderCal(); scheduleSync();
+}
+document.getElementById("mark").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const id=ymd(today);setDayState(id,R[id]===b.dataset.v?null:b.dataset.v)});
+function renderCal(){
+  const y=calM.getFullYear(), m=calM.getMonth();
+  document.getElementById("mTitle").textContent=new Intl.DateTimeFormat("es-AR",{month:"long",year:"numeric"}).format(calM);
+  const first=new Date(y,m,1), lead=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  const tStr=ymd(today); let ok=0,no=0,html=["L","M","X","J","V","S","D"].map(d=>`<div class="dh">${d}</div>`).join("");
+  for(let i=0;i<lead;i++)html+=`<span class="empty"></span>`;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(y,m,d), id=ymd(dt), st=R[id], pl=planFor(dt), fut=id>tStr;
+    if(st==="ok")ok++; if(st==="no")no++;
+    const lbl=dt.getDate()+" — "+(pl?pl.title:"sin plan")+(st==="ok"?", cumplido":st==="no"?", no cumplido":"");
+    html+=`<button type="button" data-id="${id}" class="${st||""}${id===tStr?" today":""}${fut?" future":""}" aria-label="${lbl}" ${fut?"disabled":""}>${d}${pl?`<span class="dot ${pl.tag}"></span>`:""}</button>`;
+  }
+  document.getElementById("cal").innerHTML=html;
+  const pct=ok+no?Math.round(ok/(ok+no)*100)+"%":"—";
+  document.getElementById("stats").innerHTML=`<div class="stat"><b>${ok}</b><span>Cumplidos</span></div><div class="stat"><b>${no}</b><span>No cumplidos</span></div><div class="stat"><b>${pct}</b><span>Cumplimiento</span></div>`;
+}
+document.getElementById("cal").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(!b||b.disabled)return;const id=b.dataset.id,c=R[id];setDayState(id,!c?"ok":c==="ok"?"no":null)});
+document.getElementById("mPrev").addEventListener("click",()=>{calM=new Date(calM.getFullYear(),calM.getMonth()-1,1);renderCal()});
+document.getElementById("mNext").addEventListener("click",()=>{calM=new Date(calM.getFullYear(),calM.getMonth()+1,1);renderCal()});
+
+/* ---------- Sincronización con GitHub Gist ---------- */
+const FILE="plan-futbol.json";
+function cfg(){return {token:store.get("gh_token")||"",gist:store.get("gist_id")||""}}
+function chkT(){try{return JSON.parse(store.get("chkT")||"{}")}catch(e){return {}}}
+function touchChk(k){const t=chkT();t[k]=Date.now();store.set("chkT",JSON.stringify(t));scheduleSync()}
+function localState(){
+  const reg={}; const ids=new Set([...Object.keys(R),...Object.keys(RT)]);
+  ids.forEach(id=>{reg[id]={estado:R[id]||null,auto:!!A[id],t:RT[id]||0}});
+  const ct=chkT(), checks={};
+  Object.keys(ct).forEach(k=>{let o={};try{o=JSON.parse(store.get(k)||"{}")}catch(e){} checks[k]={o,t:ct[k]}});
+  return {v:1,pesos:W,registro:reg,checks,anchor:{v:ymd(anchor),t:Number(store.get("anchorT")||0)}};
+}
+function newer(a,b){return (b&&(b.t||0)>((a&&a.t)||0))?b:a}
+function merge(a,b){
+  const out={v:1,pesos:{},registro:{},checks:{},anchor:newer(a.anchor,b.anchor)};
+  for(const f of ["pesos","registro","checks"]){
+    const ka=a[f]||{}, kb=b[f]||{};
+    new Set([...Object.keys(ka),...Object.keys(kb)]).forEach(k=>{out[f][k]=newer(ka[k],kb[k])});
+  }
+  return out;
+}
+function applyState(st){
+  W=st.pesos||{}; saveLocal();
+  R={};A={};RT={};
+  Object.entries(st.registro||{}).forEach(([id,r])=>{RT[id]=r.t||0; if(r.estado){R[id]=r.estado; if(r.auto)A[id]=1}});
+  saveR();
+  const ct={}; Object.entries(st.checks||{}).forEach(([k,c])=>{store.set(k,JSON.stringify(c.o||{}));ct[k]=c.t||0}); store.set("chkT",JSON.stringify(ct));
+  if(st.anchor&&st.anchor.v){anchor=parseYmd(st.anchor.v);store.set("anchor",st.anchor.v);store.set("anchorT",String(st.anchor.t||0));todayWeek=cycleWeek();}
+  render(); renderPesos(); renderCal();
+}
+function syncMsg(t){document.getElementById("syncStatus").textContent=t}
+async function gh(method,path,body){
+  const r=await fetch("https://api.github.com"+path,{method,headers:{"Authorization":"Bearer "+cfg().token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}
+  return r.json();
+}
+let syncing=false, again=false, syncT;
+function scheduleSync(){if(!cfg().token)return;clearTimeout(syncT);syncT=setTimeout(syncNow,1500)}
+async function syncNow(){
+  const c=cfg(); if(!c.token)return;
+  if(syncing){again=true;return} syncing=true; syncMsg("Sincronizando…");
+  try{
+    const mine=localState();
+    if(!c.gist){
+      const g=await gh("POST","/gists",{description:"Plan Fútbol — datos",public:false,files:{[FILE]:{content:JSON.stringify(mine)}}});
+      store.set("gist_id",g.id); document.getElementById("gistId").value=g.id;
+    }else{
+      const g=await gh("GET","/gists/"+c.gist);
+      const f=g.files&&g.files[FILE]; let remote={};
+      if(f){ const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content; try{remote=JSON.parse(txt)}catch(e){remote={}} }
+      const merged=merge(mine,remote), out=JSON.stringify(merged);
+      if(out!==JSON.stringify(mine)) applyState(merged);
+      if(!f||out!==JSON.stringify(merge(remote,{})) ) await gh("PATCH","/gists/"+c.gist,{files:{[FILE]:{content:out}}});
+    }
+    syncMsg("Sincronizado · "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){
+    syncMsg(e.status===401?"El token no es válido o venció. Generá uno nuevo con permiso gist.":
+            e.status===404?"No se encontró el Gist. Revisá el ID o dejalo vacío para crear uno nuevo.":
+            "Sin conexión: los cambios quedan en este dispositivo y se suben en la próxima sincronización.");
+  }finally{syncing=false; if(again){again=false;scheduleSync()}}
+}
+document.getElementById("syncSave").addEventListener("click",()=>{
+  store.set("gh_token",document.getElementById("ghToken").value.trim());
+  store.set("gist_id",document.getElementById("gistId").value.trim());
+  if(!cfg().token){syncMsg("Pegá el token primero.");return}
+  syncNow();
+});
+document.getElementById("syncNowBtn").addEventListener("click",syncNow);
+document.getElementById("syncOff").addEventListener("click",()=>{store.set("gh_token","");document.getElementById("ghToken").value="";syncMsg("Desconectado. Los datos siguen en este dispositivo y en el Gist.")});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncNow()});
+
+loadLocal(); loadR();
+todayWeek=cycleWeek(); curWeek=todayWeek;
+render(); renderPesos(); renderCal();
+document.getElementById("ghToken").value=cfg().token; document.getElementById("gistId").value=cfg().gist;
+document.getElementById("pStatus").textContent=cfg().token?"Se sincroniza con tu Gist.":"Guardado en este dispositivo. Configurá la sincronización en Sync.";
+if(cfg().token){syncMsg("Conectado.");syncNow()}
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
