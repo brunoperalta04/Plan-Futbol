@@ -1,5 +1,5 @@
 // Cache para que la app abra sin conexión. Subí VERSION cuando cambies index.html.
-const VERSION = "plan-futbol-v2";
+const VERSION = "plan-futbol-v3";
 const FILES = ["./", "index.html", "manifest.json", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable.png"];
 
 self.addEventListener("install", e => {

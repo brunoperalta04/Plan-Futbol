@@ -465,6 +465,7 @@ async function saveKg(k,raw){
 function catalogSx(k){for(const g of catalog())for(const it of g.items)if(it.k===k)return it.sx;return ""}
 let stT; function setStatus(t){const el=document.getElementById("pStatus");el.textContent=t;clearTimeout(stT);stT=setTimeout(()=>{el.textContent=cfg().token?"Se sincroniza con tu Gist.":"Guardado en este dispositivo."},2500)}
 document.getElementById("pList").addEventListener("change",e=>{const i=e.target.closest("input[data-k]");if(i)saveKg(i.dataset.k,i.value)});
+let kgT; document.getElementById("pList").addEventListener("input",e=>{const i=e.target.closest("input[data-k]");if(!i)return;clearTimeout(kgT);kgT=setTimeout(()=>saveKg(i.dataset.k,i.value),800)});
 document.getElementById("pList").addEventListener("focusout",()=>setTimeout(()=>{if(pesosDirty)renderPesos()},0));
 
 function showTab(t){
@@ -537,7 +538,7 @@ function applyState(st){
 }
 function syncMsg(t){document.getElementById("syncStatus").textContent=t}
 async function gh(method,path,body){
-  const r=await fetch("https://api.github.com"+path,{method,headers:{"Authorization":"Bearer "+cfg().token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
+  const r=await fetch("https://api.github.com"+path+(method==="GET"?(path.includes("?")?"&":"?")+"_="+Date.now():""),{method,cache:"no-store",headers:{"Authorization":"Bearer "+cfg().token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28",...(body?{"Content-Type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
   if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}
   return r.json();
 }
@@ -554,12 +555,12 @@ async function syncNow(){
     }else{
       const g=await gh("GET","/gists/"+c.gist);
       const f=g.files&&g.files[FILE]; let remote={};
-      if(f){ const txt=f.truncated?await (await fetch(f.raw_url)).text():f.content; try{remote=JSON.parse(txt)}catch(e){remote={}} }
+      if(f){ const txt=f.truncated?await (await fetch(f.raw_url,{cache:"no-store"})).text():f.content; try{remote=JSON.parse(txt)}catch(e){remote={}} }
       const merged=merge(mine,remote), out=JSON.stringify(merged);
       if(out!==JSON.stringify(mine)) applyState(merged);
       if(!f||out!==JSON.stringify(merge(remote,{})) ) await gh("PATCH","/gists/"+c.gist,{files:{[FILE]:{content:out}}});
     }
-    syncMsg("Sincronizado · "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}));
+    syncMsg("Sincronizado · "+new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})+" · Gist …"+cfg().gist.slice(-6));
   }catch(e){
     syncMsg(e.status===401?"El token no es válido o venció. Generá uno nuevo con permiso gist.":
             e.status===404?"No se encontró el Gist. Revisá el ID o dejalo vacío para crear uno nuevo.":
@@ -574,7 +575,11 @@ document.getElementById("syncSave").addEventListener("click",()=>{
 });
 document.getElementById("syncNowBtn").addEventListener("click",syncNow);
 document.getElementById("syncOff").addEventListener("click",()=>{store.set("gh_token","");document.getElementById("ghToken").value="";syncMsg("Desconectado. Los datos siguen en este dispositivo y en el Gist.")});
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncNow()});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible")syncNow();
+  else{ const a=document.activeElement; if(a&&a.dataset&&a.dataset.k)a.blur(); if(syncT){clearTimeout(syncT);syncNow()} }
+});
+setInterval(()=>{if(document.visibilityState==="visible"&&cfg().token)syncNow()},60000);
 
 loadLocal(); loadR();
 todayWeek=cycleWeek(); curWeek=todayWeek;
